@@ -1,0 +1,21 @@
+{
+  "name": "DropRecognition",
+  "version": "1.0.0",
+  "main": "dist/DropRecognition.js",
+  "author": "bbaa_bbaa <bbaa_bbaa@qq.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "@babel/core": "^7.10.5",
+    "@babel/plugin-proposal-class-properties": "^7.10.4",
+    "@babel/plugin-transform-runtime": "^7.10.5",
+    "@babel/preset-env": "^7.10.4",
+    "babel-loader": "^8.1.0",
+    "css-loader": "^4.0.0",
+    "image-ssim": "^0.2.0",
+    "style-loader": "^1.2.1",
+    "url-loader": "^4.1.0",
+    "webfontloader": "^1.6.28",
+    "webpack": "^4.44.0"
+  },
+  "dependencies": {}
+}
