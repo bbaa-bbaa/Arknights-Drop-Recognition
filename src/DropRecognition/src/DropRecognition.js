@@ -5,6 +5,7 @@ export default class DropsRecognition {
   constructor(img) {
     this.Image = img;
     this.Canvas = document.createElement("canvas");
+    //document.body.appendChild(this.Canvas);
     this.Canvas.width = img.width;
     this.Canvas.height = img.height;
     this.ctx = this.Canvas.getContext("2d");
@@ -30,6 +31,16 @@ export default class DropsRecognition {
     this.RectRecognition();
     this.detectStage();
     this.detectItem();
+    for (let Rect of this.BoundData.mergedRects.Right) {
+      this.ctx.strokeRect(Rect.left, Rect.top, Rect.width, Rect.height);
+    }
+    this.ctx.strokeStyle = "#ff0000";
+    this.ctx.strokeRect(
+      this.BoundData.Stage.left,
+      this.BoundData.Stage.top,
+      this.BoundData.Stage.width,
+      this.BoundData.Stage.height
+    );
     delete this.ctx;
     delete this.Canvas;
     delete this.matrixImageData;
@@ -43,7 +54,7 @@ export default class DropsRecognition {
     this.BoundData = new RectRecognition(this.matrixImageData);
   }
   detectItem() {
-    let DetectType = ["NORMAL_DROP", "EXTRA_DROP", "SPECIAL_DROP"];
+    let DetectType = ["NORMAL_DROP", "EXTRA_DROP", "SPECIAL_DROP", "ALL_DROP"];
     for (let Rect of this.BoundData.Items) {
       let Type = Rect.type;
       delete Rect.type;
@@ -51,10 +62,11 @@ export default class DropsRecognition {
       if (DetectType.includes(Type)) {
         let DropList = [];
         for (let Drop of DropsRecognition.Stage[this.Stage.Code].dropInfos) {
-          if (Drop.dropType == Type && Drop.itemId) {
+          if ((Drop.dropType == Type || Type == "ALL_DROP") && Drop.itemId && Drop.itemId != "furni") {
             DropList.push({ id: Drop.itemId, range: Drop.bounds });
           }
         }
+       // console.log(Type);
         let Item = new ItemRecognition(
           this.getImageMatrix(Rect.left, Rect.top, Rect.right, Rect.bottom),
           DropList,
@@ -85,7 +97,7 @@ export default class DropsRecognition {
       )
     );
   }
-  static init(dataName,Data) {
+  static init(dataName, Data) {
     switch (dataName) {
       case "Stage":
         this.Stage = Data;
@@ -94,7 +106,5 @@ export default class DropsRecognition {
         ItemRecognition.init(Data);
         break;
     }
-    
-    
   }
 }

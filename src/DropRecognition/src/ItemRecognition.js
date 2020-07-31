@@ -1,4 +1,4 @@
-import ssim from "image-ssim";
+import ssim from "ssim.js";
 import Rectangle from "./Rectangle";
 import ConnectedAreaRecognition from "./ConnectedAreaRecognition";
 import NumbersHashList from "./Data/NumberHashList.json";
@@ -41,7 +41,6 @@ export default class ItemRecognition {
       }
     }
     this.IData = {
-      channels: ssim.Channels.RGBAlpha,
       data: this.IData,
       height: this.Height,
       width: this.Width
@@ -56,6 +55,7 @@ export default class ItemRecognition {
     let Confidence = -Infinity;
     let Result = "";
     for (let Rule of this.Rules) {
+      if (!ItemRecognition.Images[Rule.id]) continue;
       Ctx.clearRect(0, 0, Canvas.width, Canvas.height);
       Ctx.drawImage(
         ItemRecognition.Images[Rule.id],
@@ -69,13 +69,10 @@ export default class ItemRecognition {
         Canvas.height
       );
       let ImageD = Ctx.getImageData(0, 0, Canvas.width, Canvas.height);
-      Images.push([
-        Rule.id,
-        { channels: ssim.Channels.RGBAlpha, width: this.Width, height: this.Height, data: ImageD.data }
-      ]);
+      Images.push([Rule.id, ImageD]);
     }
     for (let Image of Images) {
-      let SSIM = ssim.compare(Image[1], this.IData).ssim;
+      let SSIM = ssim(Image[1], this.IData, { windowSize: 8, ssim: "bezkrovny" }).mssim;
       if (SSIM > Confidence) {
         Confidence = SSIM;
         Result = Image[0];
@@ -87,10 +84,11 @@ export default class ItemRecognition {
   getCount() {
     if (this.ItemId == "") {
       this.Count = NaN;
+      return;
     }
     let Range = this.Rules.find(v => v.id == this.ItemId);
-    if(Range) {
-      Range=Range.range
+    if (Range) {
+      Range = Range.range;
     } else {
       return;
     }
@@ -113,9 +111,10 @@ export default class ItemRecognition {
       XStart = false;
       XEnd = false;
       for (let x = 0; x < this.Width; x++) {
-        let GreyUp = (this.Matrix[y - 1][x][0] + this.Matrix[y - 1][x][1] + this.Matrix[y - 1][x][2]) / 3;
+        let GreyUp = distance =>
+          (this.Matrix[y - distance][x][0] + this.Matrix[y - distance][x][1] + this.Matrix[y - distance][x][2]) / 3;
         let GreyNow = (this.Matrix[y][x][0] + this.Matrix[y][x][1] + this.Matrix[y][x][2]) / 3;
-        if (Math.abs(GreyNow - GreyUp) > 20) {
+        if (Math.max(Math.abs(GreyNow - GreyUp(1)), Math.abs(GreyNow - GreyUp(2)), GreyNow - GreyUp(3)) > 20) {
           if (!XStart) {
             XStart = x;
           } else {
@@ -143,7 +142,12 @@ export default class ItemRecognition {
         top: YStart,
         bottom: Math.round(this.Bound.height - this.Bound.height * 0.08)
       });
-      //console.log({left:NumberRect.left+this.Bound.left,right:NumberRect.right+this.Bound.left,top:NumberRect.top+this.Bound.top,bottom:NumberRect.bottom+this.Bound.top})
+      /*console.log({
+        left: NumberRect.left + this.Bound.left,
+        right: NumberRect.right + this.Bound.left,
+        top: NumberRect.top + this.Bound.top,
+        bottom: NumberRect.bottom + this.Bound.top
+      });*/
     } else {
       return;
     }
@@ -154,6 +158,30 @@ export default class ItemRecognition {
       for (let x = 0; x < NumberRect.width; x++) {
         let [R, G, B] = this.Matrix[y + NumberRect.top][x + NumberRect.left];
         let Grey = (R + G + B) / 3;
+        if (Grey >= 120) {
+          NumberMartix[y][x] = true;
+        } else if (Grey < 120 && Grey > 105) {
+          let left, right, top, bottom;
+          if (x !== 0) {
+            left = this.Matrix[y + NumberRect.top][x + NumberRect.left - 1].reduce((a, b) => a + b) / 3;
+          }
+          if (x !== NumberRect.width - 1) {
+            right = this.Matrix[y + NumberRect.top][x + NumberRect.left + 1].reduce((a, b) => a + b) / 3;
+          }
+          if (y != 0) {
+            top = this.Matrix[y + NumberRect.top - 1][x + NumberRect.left].reduce((a, b) => a + b) / 3;
+          }
+          if (y !== NumberRect.height - 1) {
+            bottom = this.Matrix[y + NumberRect.top + 1][x + NumberRect.left].reduce((a, b) => a + b) / 3;
+          }
+          if ((left && left > 120) || (right && right > 120) || (top && top > 120) || (bottom && bottom > 120)) {
+            NumberMartix[y][x] = true;
+          } else {
+            NumberMartix[y][x] = false;
+          }
+        } else {
+          NumberMartix[y][x] = false;
+        }
         NumberMartix[y][x] = Grey > 80;
         if (NumberMartix[y][x]) {
           NumberNodes.add(x * 10000 + y);
@@ -161,9 +189,17 @@ export default class ItemRecognition {
       }
     }
     let GetAllNumber = new ConnectedAreaRecognition(NumberMartix, NumberNodes, true);
-    let TempCount="";
-    let Result = GetAllNumber.GetAllConnectedArea((Rect)=>{
-      if(Rect.point<20) {
+    let TempCount = "";
+    let Result = GetAllNumber.GetAllConnectedArea(Rect => {
+      //console.log(Rect);
+      if (
+        Rect.point < 20 ||
+        Rect.width > Rect.height ||
+        Rect.height < 8 ||
+        Rect.width < 3 ||
+        NumberRect.width - Rect.left < 5 ||
+        Rect.left < 5
+      ) {
         return false;
       }
       return Rect;
@@ -194,14 +230,14 @@ export default class ItemRecognition {
         }
       }
       Ctx.putImageData(ImgData, 0, 0);
-      NumCtx.clearRect(0, 0, NumCanvas.width,NumCanvas.height);
+      NumCtx.clearRect(0, 0, NumCanvas.width, NumCanvas.height);
       NumCtx.drawImage(Canvas, 0, 0, Canvas.width, Canvas.height, 0, 0, NumCanvas.width, NumCanvas.height);
       let DHash = this.getDHash(NumCtx.getImageData(0, 0, NumCanvas.width, NumCanvas.height));
-      let NumberResult=this.dHashtoNumber(DHash);
-      TempCount+=NumberResult.Num;
+      let NumberResult = this.dHashtoNumber(DHash, NumList);
+      TempCount += NumberResult.Num;
       this.Confidence.Count.push(NumberResult.Confidence);
     }
-    this.Count=Number(TempCount);
+    this.Count = Number(TempCount);
   }
   getDHash(item) {
     let HashString = "";
@@ -218,12 +254,18 @@ export default class ItemRecognition {
     }
     return HashString;
   }
-  dHashtoNumber(hash) {
+  /**
+   *
+   * @param {string} hash
+   * @param {array} Numbers
+   */
+  dHashtoNumber(hash, Numbers) {
     let NumConfidence = -Infinity;
     let Num = NaN;
     let AllLength = 80;
-    for (let NumberDHash of NumbersHashList) {
-      let Confidence=0;
+    let NumsHashList = NumbersHashList.filter(v => Numbers.includes(v.number));
+    for (let NumberDHash of NumsHashList) {
+      let Confidence = 0;
       for (let i = 0; i < hash.length; i++) {
         if (hash[i] == "1") {
           Confidence += NumberDHash.hash[i];
@@ -232,15 +274,15 @@ export default class ItemRecognition {
         }
       }
       Confidence /= AllLength;
-      if(Confidence>NumConfidence) {
-        NumConfidence=Confidence;
-        Num=NumberDHash.number;
+      if (Confidence > NumConfidence) {
+        NumConfidence = Confidence;
+        Num = NumberDHash.number;
       }
     }
     return {
-      Num:Num,
-      Confidence:NumConfidence
-    }
+      Num: Num,
+      Confidence: NumConfidence
+    };
   }
   static init(Image) {
     this.Images = Image;

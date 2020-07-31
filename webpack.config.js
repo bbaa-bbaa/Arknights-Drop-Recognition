@@ -5,7 +5,7 @@ const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 module.exports = {
   entry: "./src/main.js",
   output: {
-    filename: "bundle.js",
+    filename: "bundle.[hash:8].js",
     path: path.resolve(__dirname, "dist"),
     publicPath: "https://static.bbaasite.cn/arkdrop/"
   },

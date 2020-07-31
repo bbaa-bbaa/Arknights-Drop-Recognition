@@ -45,16 +45,17 @@ export default class RectRecognition {
     );
     this.Bound(mergedRects);
     this.GetDropType(mergedRects.Right, ImageData);
+    this.mergedRects = mergedRects;
     delete this.DataAreaSpilt;
     delete this.Node;
     delete this.ImageData;
   }
   // 识别边界
   Bound(Rects) {
-    this.Stage = Rects.Left[0];
+    this.Stage = Rects.Stage;
     this.Items = [];
     for (let Rect of Rects.Right) {
-      if (Math.abs(Rect.height / Rect.width - 1) < 0.2) {
+      if (Math.abs(Rect.height / Rect.width - 1) < 0.2 && Rect.height > 50 && Rect.width > 50) {
         this.Items.push(Rect);
       }
     }
@@ -86,16 +87,12 @@ export default class RectRecognition {
   }
   CompareType(rgb) {
     let Type = Object.entries(RectRecognition.DropTypeColor);
-    let RGBDiffMin = Infinity;
-    let rType = null;
-    let nowValue = Infinity;
     for (let [type, color] of Type) {
-      if ((nowValue = this.RGBDiff(color, rgb)) < RGBDiffMin) {
-        rType = type;
-        RGBDiffMin = nowValue;
+      if(color(...rgb)) {
+        return type;
       }
     }
-    return rType;
+    return "ALL_DROP"
   }
   Binarization(width, height, ImageData) {
     let Matrix = [];
@@ -146,6 +143,16 @@ export default class RectRecognition {
         RightRect.push(Rect);
       }
     }
+    LeftRect.sort(this.sortRect);
+    let StageRect=LeftRect.shift();
+    for(let Rect of LeftRect) {
+      let [left, right, top, bottom] = StageRect.direction(Rect);
+      if(right && !left &&!top&&!bottom) {
+        StageRect.merge(Rect)
+      } else {
+        break;
+      }
+    }
     let Merge = (Rects, q) => {
       for (let i = 0; i < Rects.length; i++) {
         for (let j = i + 1; j < Rects.length; j++) {
@@ -160,7 +167,7 @@ export default class RectRecognition {
       return Rects;
     };
     return {
-      Left: Merge(LeftRect, 10).sort(this.sortRect),
+      Stage: StageRect,
       Right: Merge(RightRect, 10),
       Middle: MiddleLine
     };
@@ -187,9 +194,19 @@ export default class RectRecognition {
    */
 }
 RectRecognition.DropTypeColor = {
-  SPECIAL_DROP: [243, 101, 0],
-  NORMAL_DROP: [175, 175, 175],
-  EXTRA_DROP: [218, 227, 53],
-  FIXED_DROP: [253, 214, 0],
-  LUCKY_DROP: [253, 103, 1]
+  SPECIAL_DROP: (R,G,B)=>{
+    return Math.abs(R-240)<5 && Math.abs(G-100)<10 && B<50
+  },
+  NORMAL_DROP: (R,G,B)=>{
+   return Math.abs(R-175) + Math.abs(G-175) + Math.abs(B-175) <20
+  },
+  EXTRA_DROP: (R,G,B)=>{
+    return G > R && G>B && B<150 && R > 200 && G>200;
+  },
+  FIXED_DROP: (R,G,B)=>{
+    return R> 200 && Math.abs(G-200)<20 && B<120
+  },
+  LUCKY_DROP: (R,G,B)=>{
+    return Math.abs(R-250)<5 && Math.abs(G-100)<10 && B<50
+  }
 };

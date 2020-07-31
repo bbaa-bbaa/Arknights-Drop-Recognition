@@ -3199,6 +3199,11 @@ split-string@^3.0.1, split-string@^3.0.2:
   dependencies:
     extend-shallow "^3.0.0"
 
+ssim.js@^3.1.1:
+  version "3.1.1"
+  resolved "https://registry.npm.taobao.org/ssim.js/download/ssim.js-3.1.1.tgz#6b0ad54a8eeae3490adde84076f62a2dc48febfe"
+  integrity sha1-awrVSo7q40kK3ehAdvYqLcSP6/4=
+
 ssri@^6.0.1:
   version "6.0.1"
   resolved "https://registry.npm.taobao.org/ssri/download/ssri-6.0.1.tgz#2a3c41b28dd45b62b63676ecb74001265ae9edd8"

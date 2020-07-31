@@ -57,30 +57,51 @@ FontLoaded.then(() => {
 function Recognition(data) {
   let img = new Image();
   let Element = $('<div class="mdui-row"></div>');
-  Element.append($('<div class="mdui-col-xs-12"></div>').append(img));
+  let showImg = new Image();
+  showImg.src = data;
+  $(showImg).addClass("csc");
+  Element.append($('<div class="mdui-col-xs-12 image-box"></div>').append(showImg));
   $("#DataArea").append(Element);
   img.onload = () => {
-    let Start=new Date().getTime();
+    let Start = new Date().getTime();
+    try {
+      let Result = new DropRecognition(img);
+      let End = new Date().getTime();
+      console.log(Result);
+      let TBody = Element.append(
+        `
+      <table class="mdui-table">
+        <thead>
+          <tr>
+            <th>关卡代码</th>
+            <th>${Result.Stage.Code}</th>
+            <th>可信度</th>
+            <th>${Result.Stage.Confidence.toFixed(5)}</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+     `
+      ).find("tbody");
 
-    let Result = new DropRecognition(img);
-    let End=new Date().getTime();
-    //console.log(Result);
-    Element.append(`<div class="mdui-col-xs-3">关卡代码</div>`);
-    Element.append(`<div class="mdui-col-xs-3">${Result.Stage.Code}</div>`);
-    Element.append(`<div class="mdui-col-xs-3">可信度</div>`);
-    Element.append(`<div class="mdui-col-xs-3">${Result.Stage.Confidence.toFixed(5)}</div>`);
-    for (let [Index, Item] of Result.Items.entries()) {
-      Element.append(`<div class="mdui-col-xs-3">物品${Index+1}</div>`);
-      Element.append(`<div class="mdui-col-xs-3">类型:${Item.type}</div>`);
-      if(Item.ItemId) {
-        Element.append(`<div class="mdui-col-xs-3">名称:${ItemtoName[Item.ItemId]}(${Item.Confidence.ItemId.toFixed(5)})</div>`);
-        Element.append(`<div class="mdui-col-xs-3">数量:${Item.Count}(${Item.Confidence.Count.map(a=>a.toFixed(5)).join(',')})</div>`);
-      } else {
-        Element.append(`<div class="mdui-col-xs-3">未参与识别</div>`);
-        Element.append(`<div class="mdui-col-xs-3">未参与识别</div>`);
+      for (let [Index, Item] of Result.Items.entries()) {
+        let tr = TBody.append("<tr></tr>").children().last();
+        tr.append(`<td>物品${Index + 1}</td>`);
+        tr.append(`<td>类型:${Item.type}</td>`);
+        if (Item.ItemId) {
+          tr.append(`<td>名称:${ItemtoName[Item.ItemId]}(${Item.Confidence.ItemId.toFixed(5)})</td>`);
+          tr.append(`<td>数量:${Item.Count}(${Item.Confidence.Count.map(a => a.toFixed(5)).join(",")})</td>`);
+        } else {
+          tr.append(`<td>未参与识别</td>`);
+          tr.append(`<td>未参与识别</td>`);
+        }
       }
+      tr.append(`<tr>识别用时${End - Start}ms</tr>`);
+    } catch (e) {
+      tr.append(`<div class="mdui-col-xs-12">发生错误${e}</div>`);
+      throw e;
     }
-    Element.append(`<div class="mdui-col-xs-12">识别用时${End-Start}ms</div>`);
+    mdui.mutation();
   };
   img.src = data;
 }
