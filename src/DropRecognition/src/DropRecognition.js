@@ -29,8 +29,7 @@ export default class DropsRecognition {
       }
     }
     this.RectRecognition();
-    this.detectStage();
-    this.detectItem();
+    /*
     for (let Rect of this.BoundData.mergedRects.Right) {
       this.ctx.strokeRect(Rect.left, Rect.top, Rect.width, Rect.height);
     }
@@ -40,7 +39,9 @@ export default class DropsRecognition {
       this.BoundData.Stage.top,
       this.BoundData.Stage.width,
       this.BoundData.Stage.height
-    );
+    );*/
+    this.detectStage();
+    this.detectItem();
     delete this.ctx;
     delete this.Canvas;
     delete this.matrixImageData;

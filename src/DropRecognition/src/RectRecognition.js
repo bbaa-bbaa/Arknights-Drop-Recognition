@@ -88,11 +88,11 @@ export default class RectRecognition {
   CompareType(rgb) {
     let Type = Object.entries(RectRecognition.DropTypeColor);
     for (let [type, color] of Type) {
-      if(color(...rgb)) {
+      if (color(...rgb)) {
         return type;
       }
     }
-    return "ALL_DROP"
+    return "ALL_DROP";
   }
   Binarization(width, height, ImageData) {
     let Matrix = [];
@@ -144,11 +144,11 @@ export default class RectRecognition {
       }
     }
     LeftRect.sort(this.sortRect);
-    let StageRect=LeftRect.shift();
-    for(let Rect of LeftRect) {
+    let StageRect = LeftRect.shift();
+    for (let Rect of LeftRect) {
       let [left, right, top, bottom] = StageRect.direction(Rect);
-      if(right && !left &&!top&&!bottom) {
-        StageRect.merge(Rect)
+      if ((right || left) && !top && !bottom) {
+        StageRect.merge(Rect);
       } else {
         break;
       }
@@ -194,19 +194,19 @@ export default class RectRecognition {
    */
 }
 RectRecognition.DropTypeColor = {
-  SPECIAL_DROP: (R,G,B)=>{
-    return Math.abs(R-240)<5 && Math.abs(G-100)<10 && B<50
+  SPECIAL_DROP: (R, G, B) => {
+    return Math.abs(R - 240) < 5 && Math.abs(G - 100) < 10 && B < 50;
   },
-  NORMAL_DROP: (R,G,B)=>{
-   return Math.abs(R-175) + Math.abs(G-175) + Math.abs(B-175) <20
+  NORMAL_DROP: (R, G, B) => {
+    return Math.abs(R - 175) + Math.abs(G - 175) + Math.abs(B - 175) < 20;
   },
-  EXTRA_DROP: (R,G,B)=>{
-    return G > R && G>B && B<150 && R > 200 && G>200;
+  EXTRA_DROP: (R, G, B) => {
+    return G > R && G > B && B < 150 && R > 200 && G > 200;
   },
-  FIXED_DROP: (R,G,B)=>{
-    return R> 200 && Math.abs(G-200)<20 && B<120
+  FIXED_DROP: (R, G, B) => {
+    return R > 200 && Math.abs(G - 200) < 20 && B < 120;
   },
-  LUCKY_DROP: (R,G,B)=>{
-    return Math.abs(R-250)<5 && Math.abs(G-100)<10 && B<50
+  LUCKY_DROP: (R, G, B) => {
+    return Math.abs(R - 250) < 5 && Math.abs(G - 100) < 10 && B < 50;
   }
 };

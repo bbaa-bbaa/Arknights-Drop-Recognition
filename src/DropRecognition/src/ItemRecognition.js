@@ -110,11 +110,15 @@ export default class ItemRecognition {
     for (let y = this.Height >> 1; y < this.Height; y++) {
       XStart = false;
       XEnd = false;
-      for (let x = 0; x < this.Width; x++) {
+      for (let x = this.Width >> 1; x < this.Width; x++) {
         let GreyUp = distance =>
           (this.Matrix[y - distance][x][0] + this.Matrix[y - distance][x][1] + this.Matrix[y - distance][x][2]) / 3;
         let GreyNow = (this.Matrix[y][x][0] + this.Matrix[y][x][1] + this.Matrix[y][x][2]) / 3;
-        if (Math.max(Math.abs(GreyNow - GreyUp(1)), Math.abs(GreyNow - GreyUp(2)), GreyNow - GreyUp(3)) > 20) {
+        if (
+          (this.ItemId == "3301"
+            ? Math.abs(GreyNow - GreyUp(1))
+            : Math.max(Math.abs(GreyNow - GreyUp(1)), Math.abs(GreyNow - GreyUp(2)), GreyNow - GreyUp(3))) > 20
+        ) {
           if (!XStart) {
             XStart = x;
           } else {
@@ -142,7 +146,7 @@ export default class ItemRecognition {
         top: YStart,
         bottom: Math.round(this.Bound.height - this.Bound.height * 0.08)
       });
-      /*console.log({
+      /* console.log({
         left: NumberRect.left + this.Bound.left,
         right: NumberRect.right + this.Bound.left,
         top: NumberRect.top + this.Bound.top,

@@ -8,12 +8,18 @@ FontLoaded.then(() => {
   $("#LoadingText").text("正在从企鹅物流获取物品列表");
   return axios.get("https://penguin-stats.io/PenguinStats/api/v2/items");
 })
+  .catch(() => {
+    return import("./item.json");
+  })
   .then(data => {
     for (let Item of data.data) {
       ItemtoName[Item.itemId] = Item.name;
     }
     $("#LoadingText").text("正在从企鹅物流获取关卡列表");
     return axios.get("https://penguin-stats.io/PenguinStats/api/v2/stages?server=CN");
+  })
+  .catch(() => {
+    return import("./stage.json");
   })
   .then(Stages => {
     let oStage = {};
@@ -96,9 +102,9 @@ function Recognition(data) {
           tr.append(`<td>未参与识别</td>`);
         }
       }
-      tr.append(`<tr>识别用时${End - Start}ms</tr>`);
+      TBody.append($(`<tr></tr>`).text(`识别用时${End - Start}ms`));
     } catch (e) {
-      tr.append(`<div class="mdui-col-xs-12">发生错误${e}</div>`);
+      Element.append(`<div class="mdui-col-xs-12">发生错误${e}</div>`);
       throw e;
     }
     mdui.mutation();
