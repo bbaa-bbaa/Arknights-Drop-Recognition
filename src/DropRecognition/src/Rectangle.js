@@ -28,6 +28,11 @@ export default class Rectangle {
       bottom: Math.max(this.bottom, Rect2.bottom)
     });
   }
+  /**
+   * 计算矩形距离
+   * https://stackoverflow.com/a/26178015
+   * @param {*} Rect2
+   */
   distance(Rect2) {
     let [left, right, top, bottom] = this.direction(Rect2);
     if (left && top) {

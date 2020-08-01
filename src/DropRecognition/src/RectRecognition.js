@@ -186,12 +186,6 @@ export default class RectRecognition {
     }
     return C / (Rect.width * Rect.height) > 0.1;
   }
-  /**
-   * 计算矩形距离
-   * https://stackoverflow.com/a/26178015
-   * @param {*} Rect1
-   * @param {*} Rect2
-   */
 }
 RectRecognition.DropTypeColor = {
   SPECIAL_DROP: (R, G, B) => {
