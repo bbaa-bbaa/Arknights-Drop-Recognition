@@ -2,7 +2,7 @@ var path = require("path");
 
 module.exports = {
   entry: "./main.js",
-  mode: "production",
+  mode: "development",
   output: {
     path: path.resolve(__dirname, "dist"),
     filename: "DropRecognition.js",

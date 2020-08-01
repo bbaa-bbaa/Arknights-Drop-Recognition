@@ -43,6 +43,7 @@ FontLoaded.then(() => {
     $("button").on("click", () => {
       $("#File").get(0).click();
       $("#File").on("change", function () {
+        let FileList = [];
         for (let File of this.files) {
           try {
             if (!File.type.match("image.*")) {
@@ -51,31 +52,51 @@ FontLoaded.then(() => {
           } catch (e) {
             continue;
           }
-          let Reader = new FileReader();
-          Reader.onload = function () {
-            Recognition(this.result);
-          };
-          Reader.readAsDataURL(File);
+          FileList.push(File);
         }
+        nextFile(FileList);
       });
     });
   });
+function nextFile(FileList) {
+  if (FileList.length == 0) {
+    requestAnimationFrame(() => {
+      mdui.mutation();
+    });
+    return;
+  }
+  let Reader = new FileReader();
+  Reader.onload = function () {
+    Recognition(this.result).then(() => {
+      requestAnimationFrame(()=>{
+       nextFile(FileList);
+      });
+    });
+  };
+  Reader.readAsDataURL(FileList.shift());
+}
 function Recognition(data) {
-  let img = new Image();
-  let Element = $('<div class="mdui-row"></div>');
-  let showImg = new Image();
-  showImg.src = data;
-  $(showImg).addClass("csc");
-  Element.append($('<div class="mdui-col-xs-12 image-box"></div>').append(showImg));
-  $("#DataArea").append(Element);
-  img.onload = () => {
-    let Start = new Date().getTime();
-    try {
-      let Result = new DropRecognition(img);
-      let End = new Date().getTime();
-      console.log(Result);
-      let TBody = Element.append(
-        `
+  return new Promise(reslove => {
+    let img = new Image();
+    let Element = $('<div class="mdui-row"></div>');
+    let showImg = new Image();
+    showImg.src = data;
+    $(showImg).addClass("csc");
+    Element.append($('<div class="mdui-col-xs-12 image-box"></div>').append(showImg));
+    $("#DataArea").append(Element);
+    img.onload = () => {
+      setTimeout(() => {
+        let Start = new Date().getTime();
+        let Result;
+        try {
+          Result = new DropRecognition(img);
+        } catch (e) {
+          Element.append($("<tr></tr>").text("发生错误" + e));
+        }
+        let End = new Date().getTime();
+        console.log(Result);
+        let TBody = Element.append(
+          `
       <table class="mdui-table">
         <thead>
           <tr>
@@ -88,28 +109,26 @@ function Recognition(data) {
         <tbody></tbody>
       </table>
      `
-      ).find("tbody");
+        ).find("tbody");
 
-      for (let [Index, Item] of Result.Items.entries()) {
-        let tr = TBody.append("<tr></tr>").children().last();
-        tr.append(`<td>物品${Index + 1}</td>`);
-        tr.append(`<td>类型:${Item.type}</td>`);
-        if (Item.ItemId) {
-          tr.append(`<td>名称:${ItemtoName[Item.ItemId]}(${Item.Confidence.ItemId.toFixed(5)})</td>`);
-          tr.append(`<td>数量:${Item.Count}(${Item.Confidence.Count.map(a => a.toFixed(5)).join(",")})</td>`);
-        } else {
-          tr.append(`<td>未参与识别</td>`);
-          tr.append(`<td>未参与识别</td>`);
+        for (let [Index, Item] of Result.Items.entries()) {
+          let tr = TBody.append("<tr></tr>").children().last();
+          tr.append(`<td>物品${Index + 1}</td>`);
+          tr.append(`<td>类型:${Item.type}</td>`);
+          if (Item.ItemId) {
+            tr.append(`<td>名称:${ItemtoName[Item.ItemId]}(${Item.Confidence.ItemId.toFixed(5)})</td>`);
+            tr.append(`<td>数量:${Item.Count}(${Item.Confidence.Count.map(a => a.toFixed(5)).join(",")})</td>`);
+          } else {
+            tr.append(`<td>未参与识别</td>`);
+            tr.append(`<td>未参与识别</td>`);
+          }
         }
-      }
-      TBody.append($(`<tr></tr>`).text(`识别用时${End - Start}ms`));
-    } catch (e) {
-      Element.append(`<div class="mdui-col-xs-12">发生错误${e}</div>`);
-      throw e;
-    }
-    mdui.mutation();
-  };
-  img.src = data;
+        TBody.append($(`<tr></tr>`).text(`识别用时${End - Start}ms`));
+        reslove();
+      }, 500);
+    };
+    img.src = data;
+  });
 }
 async function loadImages(Items) {
   let Count = 0;
