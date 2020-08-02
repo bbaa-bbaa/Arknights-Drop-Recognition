@@ -61,4 +61,7 @@ export default class Rectangle {
   get height() {
     return this.bottom - this.top + 1;
   }
+  get area(){
+    return this.width * this.height;
+  }
 }

@@ -68,8 +68,8 @@ function nextFile(FileList) {
   let Reader = new FileReader();
   Reader.onload = function () {
     Recognition(this.result).then(() => {
-      requestAnimationFrame(()=>{
-       nextFile(FileList);
+      requestAnimationFrame(() => {
+        nextFile(FileList);
       });
     });
   };
@@ -86,45 +86,50 @@ function Recognition(data) {
     $("#DataArea").append(Element);
     img.onload = () => {
       setTimeout(() => {
-        let Start = new Date().getTime();
-        let Result;
         try {
-          Result = new DropRecognition(img);
+          let Start = new Date().getTime();
+          let Result;
+          try {
+            Result = new DropRecognition(img);
+          } catch (e) {
+            Element.append($("<tr></tr>").text("发生错误" + e));
+          }
+          let End = new Date().getTime();
+          console.log(Result);
+          let TBody = Element.append(
+            `
+            <table class="mdui-table">
+              <thead>
+                <tr>
+                  <th>关卡代码</th>
+                  <th>${Result.Stage.Code}</th>
+                  <th>可信度</th>
+                  <th>${Result.Stage.Confidence.toFixed(5)}</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          `
+          ).find("tbody");
+
+          for (let [Index, Item] of Result.Items.entries()) {
+            let tr = TBody.append("<tr></tr>").children().last();
+            tr.append(`<td>物品${Index + 1}</td>`);
+            tr.append(`<td>类型:${Item.type}</td>`);
+            if (Item.ItemId) {
+              tr.append(`<td>名称:${ItemtoName[Item.ItemId]}(${Item.Confidence.ItemId.toFixed(5)})</td>`);
+              tr.append(`<td>数量:${Item.Count}(${Item.Confidence.Count.map(a => a.toFixed(5)).join(",")})</td>`);
+            } else {
+              tr.append(`<td>未参与识别</td>`);
+              tr.append(`<td>未参与识别</td>`);
+            }
+          }
+          TBody.append($(`<tr></tr>`).text(`识别用时${End - Start}ms`));
+          reslove();
         } catch (e) {
           Element.append($("<tr></tr>").text("发生错误" + e));
+          reslove();
         }
-        let End = new Date().getTime();
-        console.log(Result);
-        let TBody = Element.append(
-          `
-      <table class="mdui-table">
-        <thead>
-          <tr>
-            <th>关卡代码</th>
-            <th>${Result.Stage.Code}</th>
-            <th>可信度</th>
-            <th>${Result.Stage.Confidence.toFixed(5)}</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-     `
-        ).find("tbody");
-
-        for (let [Index, Item] of Result.Items.entries()) {
-          let tr = TBody.append("<tr></tr>").children().last();
-          tr.append(`<td>物品${Index + 1}</td>`);
-          tr.append(`<td>类型:${Item.type}</td>`);
-          if (Item.ItemId) {
-            tr.append(`<td>名称:${ItemtoName[Item.ItemId]}(${Item.Confidence.ItemId.toFixed(5)})</td>`);
-            tr.append(`<td>数量:${Item.Count}(${Item.Confidence.Count.map(a => a.toFixed(5)).join(",")})</td>`);
-          } else {
-            tr.append(`<td>未参与识别</td>`);
-            tr.append(`<td>未参与识别</td>`);
-          }
-        }
-        TBody.append($(`<tr></tr>`).text(`识别用时${End - Start}ms`));
-        reslove();
       }, 500);
     };
     img.src = data;

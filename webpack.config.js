@@ -7,7 +7,7 @@ module.exports = {
   output: {
     filename: "bundle.[hash:8].js",
     path: path.resolve(__dirname, "dist"),
-   // publicPath: "https://static.bbaasite.cn/arkdrop/"
+    //publicPath: "https://static.bbaasite.cn/arkdrop/"
   },
   devServer: {
     contentBase: "./dist",

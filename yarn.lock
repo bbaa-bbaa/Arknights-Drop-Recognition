@@ -4552,6 +4552,11 @@ signal-exit@^3.0.0:
   resolved "https://registry.npm.taobao.org/signal-exit/download/signal-exit-3.0.3.tgz?cache=0&sync_timestamp=1589682814780&other_urls=https%3A%2F%2Fregistry.npm.taobao.org%2Fsignal-exit%2Fdownload%2Fsignal-exit-3.0.3.tgz#a1410c2edd8f077b08b4e253c8eacfcaf057461c"
   integrity sha1-oUEMLt2PB3sItOJTyOrPyvBXRhw=
 
+skmeans@^0.11.3:
+  version "0.11.3"
+  resolved "https://registry.npm.taobao.org/skmeans/download/skmeans-0.11.3.tgz#6d4dafb8058520a792c10bae9d9b953a6b6379f4"
+  integrity sha1-bU2vuAWFIKeSwQuunZuVOmtjefQ=
+
 snapdragon-node@^2.0.1:
   version "2.1.1"
   resolved "https://registry.npm.taobao.org/snapdragon-node/download/snapdragon-node-2.1.1.tgz#6c175f86ff14bdb0724563e8f3c1b021a286853b"

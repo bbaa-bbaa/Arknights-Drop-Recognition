@@ -12,4 +12,4 @@ module.exports = JSON.parse("{\"data\":[{\"itemId\":\"2001\",\"name\":\"基础�
 /***/ })
 
 }]);
-//# sourceMappingURL=0.bundle.9fd6e624.js.map
+//# sourceMappingURL=0.bundle.da58b3d6.js.map

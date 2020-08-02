@@ -43,7 +43,7 @@
 /******/
 /******/ 	// script path function
 /******/ 	function jsonpScriptSrc(chunkId) {
-/******/ 		return __webpack_require__.p + "" + chunkId + ".bundle." + "9fd6e624" + ".js"
+/******/ 		return __webpack_require__.p + "" + chunkId + ".bundle." + "da58b3d6" + ".js"
 /******/ 	}
 /******/
 /******/ 	// The require function
@@ -2938,19 +2938,18 @@ function (modules) {
         }
 
         this.RectRecognition();
-        /*
-        for (let Rect of this.BoundData.mergedRects.Right) {
-          this.ctx.strokeRect(Rect.left, Rect.top, Rect.width, Rect.height);
+
+        if (this.Debug) {
+          for (let Rect of this.BoundData.mergedRects.Right) {
+            this.ctx.strokeRect(Rect.left, Rect.top, Rect.width, Rect.height);
+          }
+
+          this.ctx.strokeStyle = "#ff0000";
+          this.ctx.strokeRect(this.BoundData.Stage.left, this.BoundData.Stage.top, this.BoundData.Stage.width, this.BoundData.Stage.height);
         }
-        this.ctx.strokeStyle = "#ff0000";
-        this.ctx.strokeRect(
-          this.BoundData.Stage.left,
-          this.BoundData.Stage.top,
-          this.BoundData.Stage.width,
-          this.BoundData.Stage.height
-        );*/
 
         this.detectStage();
+        this.detectFurniture();
         this.detectItem();
         delete this.ctx;
         delete this.Canvas;
@@ -2967,6 +2966,26 @@ function (modules) {
         this.BoundData = new _RectRecognition__WEBPACK_IMPORTED_MODULE_0__["default"](this.matrixImageData);
       }
 
+      detectFurniture() {
+        let DetectType = ["LUCKY_DROP", "SPECIAL_DROP", "ALL_DROP"];
+
+        for (let Rect of this.BoundData.Items) {
+          if (DetectType.includes(Rect.type)) {
+            let OtherItems = this.BoundData.Items.filter(a => a != Rect);
+            let AreaDiff = OtherItems.reduce((a, OtherItem) => {
+              return a + Math.abs(OtherItem.area - Rect.area);
+            }, 0) / OtherItems.length;
+
+            if (AreaDiff > 1000) {
+              Rect.type = "LUCKY_DROP";
+              Rect.AreaDiff = AreaDiff;
+            } else if (Rect.type == "LUCKY_DROP") {
+              Rect.type == "SPECIAL_DROP";
+            }
+          }
+        }
+      }
+
       detectItem() {
         let DetectType = ["NORMAL_DROP", "EXTRA_DROP", "SPECIAL_DROP", "ALL_DROP"];
 
@@ -2974,8 +2993,7 @@ function (modules) {
           let Type = Rect.type;
           delete Rect.type;
           let Result = {
-            type: Type,
-            Bound: Rect
+            type: Type
           };
 
           if (DetectType.includes(Type)) {
@@ -2992,6 +3010,31 @@ function (modules) {
 
 
             let Item = new _ItemRecognition__WEBPACK_IMPORTED_MODULE_2__["default"](this.getImageMatrix(Rect.left, Rect.top, Rect.right, Rect.bottom), DropList, Rect);
+            Object.assign(Result, Item);
+          } else if (Type == "LUCKY_DROP") {
+            let Item = new _ItemRecognition__WEBPACK_IMPORTED_MODULE_2__["default"](Rect);
+            Item.ItemId = "furni";
+            Item.Count = 1;
+            Item.Confidence.Count = [1];
+
+            Item.Confidence.ItemId = (ratio => {
+              if (ratio > 1) {
+                return 1;
+              }
+
+              let range, linear_val;
+
+              if (ratio < 0.5) {
+                range = 1.0 - 0.5;
+                linear_val = ratio / (range * 2.0);
+                return linear_val;
+              } else {
+                range = 0.5;
+                linear_val = ratio / (range * 2.0);
+                return linear_val + (1.0 - linear_val) * Math.pow((linear_val - 0.5) * 2, 0.2);
+              }
+            })(Rect.AreaDiff / 2000);
+
             Object.assign(Result, Item);
           }
 
@@ -3095,6 +3138,17 @@ function (modules) {
 
     class ItemRecognition {
       constructor(ImageData, Rules, Rect) {
+        if (ImageData instanceof _Rectangle__WEBPACK_IMPORTED_MODULE_1__["default"]) {
+          this.Bound = Rect;
+          this.Confidence = {
+            ItemId: -Infinity,
+            Count: []
+          };
+          this.ItemId = "";
+          this.Count = NaN;
+          return;
+        }
+
         this.Matrix = ImageData;
         this.Width = ImageData[0].length;
         this.Height = ImageData.length;
@@ -3107,7 +3161,7 @@ function (modules) {
         };
         this.prepare();
         this.ItemId = this.getItemId();
-        this.getCount();
+        this.Count = this.getCount();
         delete this.Rules;
         delete this.IData;
         delete this.Height;
@@ -3170,8 +3224,7 @@ function (modules) {
 
       getCount() {
         if (this.ItemId == "") {
-          this.Count = NaN;
-          return;
+          return NaN;
         }
 
         let Range = this.Rules.find(v => v.id == this.ItemId);
@@ -3190,9 +3243,8 @@ function (modules) {
         }
 
         if (NumList.length == 1) {
-          this.Count = NumList[0];
           this.Confidence.Count[0] = 1;
-          return;
+          return NumList[0];
         }
 
         let XStart = false,
@@ -3347,7 +3399,7 @@ function (modules) {
           this.Confidence.Count.push(NumberResult.Confidence);
         }
 
-        this.Count = Number(TempCount);
+        return Number(TempCount);
       }
 
       getDHash(item) {
@@ -3670,13 +3722,6 @@ function (modules) {
 
         return C / (Rect.width * Rect.height) > 0.1;
       }
-      /**
-       * 计算矩形距离
-       * https://stackoverflow.com/a/26178015
-       * @param {*} Rect1
-       * @param {*} Rect2
-       */
-
 
     }
 
@@ -3754,6 +3799,12 @@ function (modules) {
           bottom: Math.max(this.bottom, Rect2.bottom)
         });
       }
+      /**
+       * 计算矩形距离
+       * https://stackoverflow.com/a/26178015
+       * @param {*} Rect2
+       */
+
 
       distance(Rect2) {
         let [left, right, top, bottom] = this.direction(Rect2);
@@ -3785,6 +3836,10 @@ function (modules) {
 
       get height() {
         return this.bottom - this.top + 1;
+      }
+
+      get area() {
+        return this.width * this.height;
       }
 
     }
@@ -14344,50 +14399,55 @@ function Recognition(data) {
 
     img.onload = function () {
       setTimeout(function () {
-        var Start = new Date().getTime();
-        var Result;
-
         try {
-          Result = new _DropRecognition__WEBPACK_IMPORTED_MODULE_5__["DropRecognition"](img);
+          var Start = new Date().getTime();
+          var Result;
+
+          try {
+            Result = new _DropRecognition__WEBPACK_IMPORTED_MODULE_5__["DropRecognition"](img);
+          } catch (e) {
+            Element.append($("<tr></tr>").text("发生错误" + e));
+          }
+
+          var End = new Date().getTime();
+          console.log(Result);
+          var TBody = Element.append("\n            <table class=\"mdui-table\">\n              <thead>\n                <tr>\n                  <th>\u5173\u5361\u4EE3\u7801</th>\n                  <th>".concat(Result.Stage.Code, "</th>\n                  <th>\u53EF\u4FE1\u5EA6</th>\n                  <th>").concat(Result.Stage.Confidence.toFixed(5), "</th>\n                </tr>\n              </thead>\n              <tbody></tbody>\n            </table>\n          ")).find("tbody");
+
+          var _iterator4 = _createForOfIteratorHelper(Result.Items.entries()),
+              _step4;
+
+          try {
+            for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
+              var _step4$value = _babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_2___default()(_step4.value, 2),
+                  Index = _step4$value[0],
+                  Item = _step4$value[1];
+
+              var tr = TBody.append("<tr></tr>").children().last();
+              tr.append("<td>\u7269\u54C1".concat(Index + 1, "</td>"));
+              tr.append("<td>\u7C7B\u578B:".concat(Item.type, "</td>"));
+
+              if (Item.ItemId) {
+                tr.append("<td>\u540D\u79F0:".concat(ItemtoName[Item.ItemId], "(").concat(Item.Confidence.ItemId.toFixed(5), ")</td>"));
+                tr.append("<td>\u6570\u91CF:".concat(Item.Count, "(").concat(Item.Confidence.Count.map(function (a) {
+                  return a.toFixed(5);
+                }).join(","), ")</td>"));
+              } else {
+                tr.append("<td>\u672A\u53C2\u4E0E\u8BC6\u522B</td>");
+                tr.append("<td>\u672A\u53C2\u4E0E\u8BC6\u522B</td>");
+              }
+            }
+          } catch (err) {
+            _iterator4.e(err);
+          } finally {
+            _iterator4.f();
+          }
+
+          TBody.append($("<tr></tr>").text("\u8BC6\u522B\u7528\u65F6".concat(End - Start, "ms")));
+          reslove();
         } catch (e) {
           Element.append($("<tr></tr>").text("发生错误" + e));
+          reslove();
         }
-
-        var End = new Date().getTime();
-        console.log(Result);
-        var TBody = Element.append("\n      <table class=\"mdui-table\">\n        <thead>\n          <tr>\n            <th>\u5173\u5361\u4EE3\u7801</th>\n            <th>".concat(Result.Stage.Code, "</th>\n            <th>\u53EF\u4FE1\u5EA6</th>\n            <th>").concat(Result.Stage.Confidence.toFixed(5), "</th>\n          </tr>\n        </thead>\n        <tbody></tbody>\n      </table>\n     ")).find("tbody");
-
-        var _iterator4 = _createForOfIteratorHelper(Result.Items.entries()),
-            _step4;
-
-        try {
-          for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
-            var _step4$value = _babel_runtime_helpers_slicedToArray__WEBPACK_IMPORTED_MODULE_2___default()(_step4.value, 2),
-                Index = _step4$value[0],
-                Item = _step4$value[1];
-
-            var tr = TBody.append("<tr></tr>").children().last();
-            tr.append("<td>\u7269\u54C1".concat(Index + 1, "</td>"));
-            tr.append("<td>\u7C7B\u578B:".concat(Item.type, "</td>"));
-
-            if (Item.ItemId) {
-              tr.append("<td>\u540D\u79F0:".concat(ItemtoName[Item.ItemId], "(").concat(Item.Confidence.ItemId.toFixed(5), ")</td>"));
-              tr.append("<td>\u6570\u91CF:".concat(Item.Count, "(").concat(Item.Confidence.Count.map(function (a) {
-                return a.toFixed(5);
-              }).join(","), ")</td>"));
-            } else {
-              tr.append("<td>\u672A\u53C2\u4E0E\u8BC6\u522B</td>");
-              tr.append("<td>\u672A\u53C2\u4E0E\u8BC6\u522B</td>");
-            }
-          }
-        } catch (err) {
-          _iterator4.e(err);
-        } finally {
-          _iterator4.f();
-        }
-
-        TBody.append($("<tr></tr>").text("\u8BC6\u522B\u7528\u65F6".concat(End - Start, "ms")));
-        reslove();
       }, 500);
     };
 
@@ -14470,4 +14530,4 @@ function _loadImages() {
 /***/ })
 
 /******/ });
-//# sourceMappingURL=bundle.9fd6e624.js.map
+//# sourceMappingURL=bundle.da58b3d6.js.map

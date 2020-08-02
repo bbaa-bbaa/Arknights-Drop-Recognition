@@ -9,6 +9,16 @@ for (let hash of NumbersHashList) {
 }
 export default class ItemRecognition {
   constructor(ImageData, Rules, Rect) {
+    if (ImageData instanceof Rectangle) {
+      this.Bound = Rect;
+      this.Confidence = {
+        ItemId: -Infinity,
+        Count: []
+      };
+      this.ItemId = "";
+      this.Count = NaN;
+      return;
+    }
     this.Matrix = ImageData;
     this.Width = ImageData[0].length;
     this.Height = ImageData.length;
@@ -21,7 +31,7 @@ export default class ItemRecognition {
     };
     this.prepare();
     this.ItemId = this.getItemId();
-    this.getCount();
+    this.Count = this.getCount();
     delete this.Rules;
     delete this.IData;
     delete this.Height;
@@ -83,8 +93,7 @@ export default class ItemRecognition {
   }
   getCount() {
     if (this.ItemId == "") {
-      this.Count = NaN;
-      return;
+      return NaN;
     }
     let Range = this.Rules.find(v => v.id == this.ItemId);
     if (Range) {
@@ -98,9 +107,8 @@ export default class ItemRecognition {
       NumList.push(i);
     }
     if (NumList.length == 1) {
-      this.Count = NumList[0];
       this.Confidence.Count[0] = 1;
-      return;
+      return NumList[0];
     }
     let XStart = false,
       XEnd = false,
@@ -241,7 +249,7 @@ export default class ItemRecognition {
       TempCount += NumberResult.Num;
       this.Confidence.Count.push(NumberResult.Confidence);
     }
-    this.Count = Number(TempCount);
+    return Number(TempCount);
   }
   getDHash(item) {
     let HashString = "";
