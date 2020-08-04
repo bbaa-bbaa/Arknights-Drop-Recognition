@@ -1,0 +1,4 @@
+[submodule "src/Recognition"]
+	path = src/Recognition
+	url = https://github.com/bbaa-bbaa/Arknights-Drop-Recognition
+	branch = DropRecognition
