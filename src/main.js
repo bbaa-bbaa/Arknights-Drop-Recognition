@@ -1,6 +1,6 @@
 import mdui from "mdui";
 import "mdui/dist/css/mdui.css";
-import { DropRecognition, FontLoaded } from "./DropRecognition";
+import { DropRecognition, FontLoaded } from "./Recognition";
 import axios from "axios";
 let $ = mdui.$;
 let ItemtoName = {};

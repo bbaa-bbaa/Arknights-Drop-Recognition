@@ -1,16 +1,9 @@
 # Prepare
 ```
-yarn install
-cd src\DropRecognition
-yarn install
-```
-# Build DropRecognition Module
-```
-cd src\DropRecognition
-yarn exec webpack 
+yarn
 ```
 
 # Build FrontEnd Page
 ```
-yarn exec webpack 
+yarn run build
 ```
